@@ -1,0 +1,6 @@
+{
+    "exclude": [
+        "data/datasets/**/*",
+    ],
+    "typeCheckingMode": "off"
+}

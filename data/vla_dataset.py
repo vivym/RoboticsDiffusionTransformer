@@ -77,7 +77,7 @@ class VLADataset:
                 dataset_path = dataset_to_path(dataset_name, self.openx_dir)
                 dataset = tfds.builder_from_directory(builder_dir=dataset_path)
                 dataset = dataset.as_dataset(split='all', shuffle_files=True)
-                
+
                 # You can add filter for other datasets
                 if dataset_name == 'kuka':
                     dataset = dataset.filter(

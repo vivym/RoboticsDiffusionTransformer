@@ -41,7 +41,7 @@ def write_tfrecords(root_dir, out_dir):
     lang = np.array([x.encode('utf-8') for x in lang])
     lang_start_end_idx = f.item()['info']['indx']
     num_ep = len(lang_start_end_idx)
-    
+
     with tqdm(total=num_ep) as pbar:
         for episode_idx, (start_idx, end_idx) in enumerate(lang_start_end_idx):
             pbar.update(1)
@@ -63,7 +63,7 @@ def write_tfrecords(root_dir, out_dir):
                 robot_obs.append(f['robot_obs'])
                 rgb_static.append(f['rgb_static'])
                 rgb_gripper.append(f['rgb_gripper'])
-                
+
             tfrecord_path = os.path.join(out_dir, f'{episode_idx:07d}.tfrecord')
             print(f"Writing TFRecords to {tfrecord_path}")
             with tf.io.TFRecordWriter(tfrecord_path) as writer:
@@ -73,18 +73,34 @@ def write_tfrecords(root_dir, out_dir):
                     )
                     writer.write(serialized_example)
 
+# output_dirs = [
+#     '../datasets/calvin/tfrecords/training',
+#     '../datasets/calvin/tfrecords/validation'
+# ]
 output_dirs = [
-    '../datasets/calvin/tfrecords/training',
-    '../datasets/calvin/tfrecords/validation'
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/tfrecords/task_D_D/training",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/tfrecords/task_D_D/validation",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/tfrecords/task_ABC_D/training",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/tfrecords/task_ABC_D/validation",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/tfrecords/task_ABCD_D/training",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/tfrecords/task_ABCD_D/validation",
 ]
 
 for output_dir in output_dirs:
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+# root_dirs = [
+#     '../datasets/calvin/task_ABC_D/training',
+#     '../datasets/calvin/task_ABC_D/validation'
+# ]
 root_dirs = [
-    '../datasets/calvin/task_ABC_D/training',
-    '../datasets/calvin/task_ABC_D/validation'
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/task_D_D/training",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/task_D_D/validation",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/task_ABC_D/training",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/task_ABC_D/validation",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/task_ABCD_D/training",
+    "/dongxu-fs1/data-ssd/mingyang/datasets/CALVIN/task_ABCD_D/validation",
 ]
 
 for root_dir, output_dir in zip(root_dirs, output_dirs):

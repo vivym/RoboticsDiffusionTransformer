@@ -41,11 +41,11 @@ def make_policy(args):
     with open(args.config_path, "r") as fp:
         config = yaml.safe_load(fp)
     args.config = config
-    
+
     # pretrained_text_encoder_name_or_path = "google/t5-v1_1-xxl"
     pretrained_vision_encoder_name_or_path = "google/siglip-so400m-patch14-384"
     model = create_model(
-        args=args.config, 
+        args=args.config,
         dtype=torch.bfloat16,
         pretrained=args.pretrained_model_name_or_path,
         # pretrained_text_encoder_name_or_path=pretrained_text_encoder_name_or_path,
@@ -112,11 +112,11 @@ def update_observation_window(args, config, ros_operator):
         img = cv2.imencode('.jpg', img)[1].tobytes()
         img = cv2.imdecode(np.frombuffer(img, np.uint8), cv2.IMREAD_COLOR)
         return img
-    
+
     global observation_window
     if observation_window is None:
         observation_window = deque(maxlen=2)
-    
+
         # Append the first dummy image
         observation_window.append(
             {
@@ -129,12 +129,12 @@ def update_observation_window(args, config, ros_operator):
                     },
             }
         )
-        
+
     img_front, img_left, img_right, puppet_arm_left, puppet_arm_right = get_ros_observation(args,ros_operator)
     img_front = jpeg_mapping(img_front)
     img_left = jpeg_mapping(img_left)
     img_right = jpeg_mapping(img_right)
-    
+
     qpos = np.concatenate(
             (np.array(puppet_arm_left.position), np.array(puppet_arm_right.position)), axis=0)
     qpos = torch.from_numpy(qpos).float().cuda()
@@ -155,22 +155,22 @@ def update_observation_window(args, config, ros_operator):
 def inference_fn(args, config, policy, t):
     global observation_window
     global lang_embeddings
-    
+
     # print(f"Start inference_thread_fn: t={t}")
     while True and not rospy.is_shutdown():
-        time1 = time.time()     
+        time1 = time.time()
 
         # fetch images in sequence [front, right, left]
         image_arrs = [
             observation_window[-2]['images'][config['camera_names'][0]],
             observation_window[-2]['images'][config['camera_names'][1]],
             observation_window[-2]['images'][config['camera_names'][2]],
-            
+
             observation_window[-1]['images'][config['camera_names'][0]],
             observation_window[-1]['images'][config['camera_names'][1]],
             observation_window[-1]['images'][config['camera_names'][2]]
         ]
-        
+
         # fetch debug images in sequence [front, right, left]
         # image_arrs = [
         #     preload_images[config['camera_names'][0]][max(t - 1, 0)],
@@ -184,18 +184,18 @@ def inference_fn(args, config, policy, t):
         # for i in range(len(image_arrs)):
         #     image_arrs[i] = cv2.imdecode(np.frombuffer(image_arrs[i], np.uint8), cv2.IMREAD_COLOR)
         # proprio = torch.from_numpy(preload_images['qpos'][t]).float().cuda()
-        
+
         images = [PImage.fromarray(arr) if arr is not None else None
                   for arr in image_arrs]
-        
+
         # for i, pos in enumerate(['f', 'r', 'l'] * 2):
         #     images[i].save(f'{t}-{i}-{pos}.png')
-        
+
         # get last qpos in shape [14, ]
         proprio = observation_window[-1]['qpos']
         # unsqueeze to [1, 14]
         proprio = proprio.unsqueeze(0)
-        
+
         # actions shaped as [1, 64, 14] in format [left, right]
         actions = policy.step(
             proprio=proprio,
@@ -203,9 +203,9 @@ def inference_fn(args, config, policy, t):
             text_embeds=lang_embeddings 
         ).squeeze(0).cpu().numpy()
         # print(f"inference_actions: {actions.squeeze()}")
-        
+
         print(f"Model inference time: {time.time() - time1} s")
-        
+
         # print(f"Finish inference_thread_fn: t={t}")
         return actions
 
@@ -213,14 +213,14 @@ def inference_fn(args, config, policy, t):
 # Main loop for the manipulation task
 def model_inference(args, config, ros_operator):
     global lang_embeddings
-    
+
     # Load rdt model
     policy = make_policy(args)
-    
+
     lang_dict = torch.load(args.lang_embeddings_path)
     print(f"Running with instruction: \"{lang_dict['instruction']}\" from \"{lang_dict['name']}\"")
     lang_embeddings = lang_dict["embeddings"]
-    
+
     max_publish_step = config['episode_len']
     chunk_size = config['chunk_size']
 
@@ -245,18 +245,18 @@ def model_inference(args, config, ros_operator):
             # The current time step
             t = 0
             rate = rospy.Rate(args.publish_rate)
-    
+
             action_buffer = np.zeros([chunk_size, config['state_dim']])
-            
+
             while t < max_publish_step and not rospy.is_shutdown():
                 # Update observation window
                 update_observation_window(args, config, ros_operator)
-                
+
                 # When coming to the end of the action chunk
                 if t % chunk_size == 0:
                     # Start inference
                     action_buffer = inference_fn(args, config, policy, t).copy()
-                
+
                 raw_action = action_buffer[t % chunk_size]
                 action = raw_action
                 # Interpolate the original action sequence
@@ -269,17 +269,17 @@ def model_inference(args, config, ros_operator):
                 for act in interp_actions:
                     left_action = act[:7]
                     right_action = act[7:14]
-                    
+
                     if not args.disable_puppet_arm:
                         ros_operator.puppet_arm_publish(left_action, right_action)  # puppet_arm_publish_continuous_thread
-                
+
                     if args.use_robot_base:
                         vel_action = act[14:16]
                         ros_operator.robot_base_publish(vel_action)
                     rate.sleep()
                     # print(f"doing action: {act}")
                 t += 1
-                
+
                 print("Published Step", t)
                 pre_action = action.copy()
 
@@ -584,14 +584,14 @@ def get_arguments():
                         default='/camera_l/color/image_raw', required=False)
     parser.add_argument('--img_right_topic', action='store', type=str, help='img_right_topic',
                         default='/camera_r/color/image_raw', required=False)
-    
+
     parser.add_argument('--img_front_depth_topic', action='store', type=str, help='img_front_depth_topic',
                         default='/camera_f/depth/image_raw', required=False)
     parser.add_argument('--img_left_depth_topic', action='store', type=str, help='img_left_depth_topic',
                         default='/camera_l/depth/image_raw', required=False)
     parser.add_argument('--img_right_depth_topic', action='store', type=str, help='img_right_depth_topic',
                         default='/camera_r/depth/image_raw', required=False)
-    
+
     parser.add_argument('--puppet_arm_left_cmd_topic', action='store', type=str, help='puppet_arm_left_cmd_topic',
                         default='/master/joint_left', required=False)
     parser.add_argument('--puppet_arm_right_cmd_topic', action='store', type=str, help='puppet_arm_right_cmd_topic',
@@ -600,7 +600,7 @@ def get_arguments():
                         default='/puppet/joint_left', required=False)
     parser.add_argument('--puppet_arm_right_topic', action='store', type=str, help='puppet_arm_right_topic',
                         default='/puppet/joint_right', required=False)
-    
+
     parser.add_argument('--robot_base_topic', action='store', type=str, help='robot_base_topic',
                         default='/odom_raw', required=False)
     parser.add_argument('--robot_base_cmd_topic', action='store', type=str, help='robot_base_topic',
@@ -614,7 +614,7 @@ def get_arguments():
     parser.add_argument('--ctrl_freq', action='store', type=int, 
                         help='The control frequency of the robot',
                         default=25, required=False)
-    
+
     parser.add_argument('--chunk_size', action='store', type=int, 
                         help='Action chunk size',
                         default=64, required=False)
@@ -628,19 +628,19 @@ def get_arguments():
     parser.add_argument('--use_depth_image', action='store_true', 
                         help='Whether to use depth images',
                         default=False, required=False)
-    
+
     parser.add_argument('--disable_puppet_arm', action='store_true',
                         help='Whether to disable the puppet arm. This is useful for safely debugging',default=False)
-    
+
     parser.add_argument('--config_path', type=str, default="configs/base.yaml", 
                         help='Path to the config file')
     # parser.add_argument('--cfg_scale', type=float, default=2.0,
     #                     help='the scaling factor used to modify the magnitude of the control features during denoising')
     parser.add_argument('--pretrained_model_name_or_path', type=str, required=True, help='Name or path to the pretrained model')
-    
+
     parser.add_argument('--lang_embeddings_path', type=str, required=True, 
                         help='Path to the pre-encoded language instruction embeddings')
-    
+
     args = parser.parse_args()
     return args
 

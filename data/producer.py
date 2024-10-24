@@ -139,7 +139,7 @@ def save_sample(step_dict, chunk_dir, chunk_item_idx):
                     past_frames_3_time_mask=step_dict['past_frames_3_time_mask'].numpy(),
                     state_std=step_dict['state_std'].numpy(),
                     state_mean=step_dict['state_mean'].numpy(),
-                    state_norm=step_dict['state_norm'].numpy(),            
+                    state_norm=step_dict['state_norm'].numpy(),
                 )
             lock.release_lock()
             return
@@ -193,7 +193,7 @@ def run_producer(seed, num_workers, worker_id, fill_up, clean_dirty, dataset_typ
                     # Write the dirty bit of size BUF_CHUNK_SIZE
                     dirty_bit = np.zeros(BUF_CHUNK_SIZE, dtype=np.uint8)
                     save_dirty_bit(chunk_dir, dirty_bit)
-                
+
                 # Save the sample
                 save_sample(step, chunk_dir, fill_chunk_item_idx)
 
@@ -224,7 +224,7 @@ def run_producer(seed, num_workers, worker_id, fill_up, clean_dirty, dataset_typ
                         # Lock the chunk
                         dirty_bit = np.ones(BUF_CHUNK_SIZE, dtype=np.uint8)
                         save_dirty_bit(dirty_chunk_dir, dirty_bit)
-                    
+
                     # Iterate over the chunks
                     dirty_chunk_idx += 1
                     if dirty_chunk_idx == chunk_end_idx:
@@ -251,16 +251,16 @@ if __name__ == '__main__':
     parser.add_argument('--fill_up', action='store_true', help="Whether to fill up the buffer before replacing dirty samples.")
     parser.add_argument('--clean_dirty', action='store_true', help="Whether to clean the dirty bits before replacing dirty samples. This option is ignored when `fill_up` is set.")
     parser.add_argument('--seed', type=int, default=None, help="Random seed. If not set, the seed will be randomly generated.")
-    parser.add_argument('--dataset_type', type=str, 
-                        default="pretrain", 
+    parser.add_argument('--dataset_type', type=str,
+                        default="pretrain",
                         help="Whether to load the pretrain dataset or finetune dataset.")
-    
+
     # Run the producer
     args = parser.parse_args()
     if args.seed is not None:
         print(f"Base seed: {args.seed}")
         random.seed(args.seed)
-    
+
     processes = []
     process_seeds = [random.randint(0, 2**32) for _ in range(args.n_workers)]
     print(f"Process seeds: {process_seeds}")
