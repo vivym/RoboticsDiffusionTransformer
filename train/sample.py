@@ -14,13 +14,15 @@ def log_sample_res(
     )
 
     rdt.eval()
-    
+
     loss_for_log = defaultdict(float)
     loss_counter = defaultdict(int)
     for step, batch in enumerate(dataloader):
         if step >= args.num_sample_batches:
             break
         
+        # torch.save(batch, f"debug/sample_batch_{step}.pt")
+
         data_indices = batch["data_indices"]
         ctrl_freqs = batch["ctrl_freqs"]
         state_norm = batch["state_norm"].to(dtype=weight_dtype)
@@ -30,11 +32,16 @@ def log_sample_res(
         states = states[:, -1:, :]
         actions = batch["actions"].to(dtype=weight_dtype)
         state_elem_mask = batch["state_elem_mask"].to(dtype=weight_dtype)
-            
+
         batch_size, _, C, H, W = images.shape
-        image_embeds = vision_encoder(images.reshape(-1, C, H, W)).detach()
+        tmp = images.reshape(-1, C, H, W)
+        # torch.save(tmp, f"debug/sample_images_{step}.pt")
+        # torch.save(vision_encoder.state_dict(), f"debug/vision_encoder.pt")
+        image_embeds = vision_encoder(tmp).detach()
         image_embeds = image_embeds.reshape((batch_size, -1, vision_encoder.hidden_size))
-        
+        # torch.save(image_embeds, f"debug/sample_image_embeds_{step}.pt")
+        # print("!" * 80)
+
         lang_attn_mask = batch["lang_attn_mask"]
         text_embeds = batch["lang_embeds"].to(dtype=weight_dtype) \
             if args.precomp_lang_embed \
@@ -42,6 +49,8 @@ def log_sample_res(
                 input_ids=batch["input_ids"],
                 attention_mask=lang_attn_mask
             )["last_hidden_state"].detach()
+        
+        # torch.save(text_embeds, f"debug/sample_text_embeds_{step}.pt")
             
         pred_actions = rdt.predict_action(
             lang_tokens=text_embeds,
@@ -51,6 +60,17 @@ def log_sample_res(
             action_mask=state_elem_mask.unsqueeze(1),
             ctrl_freqs=ctrl_freqs
         )
+
+        # torch.save({
+        #     "lang_tokens": text_embeds,
+        #     "lang_attn_mask": lang_attn_mask,
+        #     "img_tokens": image_embeds,
+        #     "state_tokens": states,
+        #     "action_mask": state_elem_mask.unsqueeze(1),
+        #     "ctrl_freqs": ctrl_freqs,
+        # }, f"debug/sample_input_{step}.pt")
+
+        # torch.save(pred_actions, f"debug/sample_pred_actions_{step}.pt")
         
         num_steps = pred_actions.shape[1]
         expanded_state_elem_mask = state_elem_mask.unsqueeze(1).tile((1, num_steps, 1)).float()
@@ -94,5 +114,9 @@ def log_sample_res(
     
     rdt.train()
     torch.cuda.empty_cache()
+
+    # print(loss_for_log)
+    # print("-" * 80)
+    # exit(0)
 
     return dict(loss_for_log)

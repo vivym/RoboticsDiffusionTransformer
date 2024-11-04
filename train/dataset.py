@@ -4,6 +4,7 @@ import os
 import json
 import math
 import random
+import hashlib
 from typing import Dict, Sequence
 
 import numpy as np
@@ -348,9 +349,14 @@ class VLAConsumerDataset(Dataset):
                 data_dict["images"] = preprocessed_images
 
                 if self.use_precomp_lang_embed:
-                    if content["instruction"][-1] == ".":
-                        content["instruction"] = content["instruction"][:-1]
-                    data_dict["lang_embed"] = torch.load(content["instruction"]) \
+                    hasher = hashlib.sha1()
+                    hasher.update(content["instruction"].encode())
+                    hash_str = hasher.hexdigest()
+
+                    assert os.path.exists(f"data/text_embeds/{hash_str}.pt"), \
+                        f"Precomputed language embedding not found for instruction: {content['instruction']}"
+
+                    data_dict["lang_embed"] = torch.load(f"data/text_embeds/{hash_str}.pt") \
                         if random.random() > self.cond_mask_prob else self.empty_lang_embed
                 else:
                     instruction = content["instruction"] \

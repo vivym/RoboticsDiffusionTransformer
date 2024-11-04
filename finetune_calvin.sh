@@ -3,11 +3,11 @@
 # export NCCL_SOCKET_IFNAME=bond0
 # export NCCL_DEBUG=INFO
 # export NCCL_NVLS_ENABLE=0
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
 export TEXT_ENCODER_NAME="google/t5-v1_1-xxl"
 export VISION_ENCODER_NAME="google/siglip-so400m-patch14-384"
-export OUTPUT_DIR="./checkpoints/rdt-finetune-calvin-1b"
+export OUTPUT_DIR="./checkpoints/rdt-finetune-calvin-1b-v2"
 export CFLAGS="-I/usr/include"
 export LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
 # export CUTLASS_PATH="/path/to/cutlass"
@@ -43,6 +43,8 @@ deepspeed --hostfile=hostfile.txt main.py \
     --mixed_precision="bf16" \
     --dataloader_num_workers=8 \
     --dataset_type="pretrain" \
+    --precomp_lang_embed \
+    --resume_from_checkpoint=latest \
     --report_to=wandb
 
     # Use this to resume training from some previous checkpoint

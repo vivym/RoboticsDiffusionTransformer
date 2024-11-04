@@ -1,4 +1,6 @@
 /data/datasets
+/data/text_embeds
+/debug
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

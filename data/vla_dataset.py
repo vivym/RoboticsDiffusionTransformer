@@ -104,11 +104,11 @@ class VLADataset:
                         IMAGE_KEYS[dataset_name]['image_keys'],
                         IMAGE_KEYS[dataset_name]['image_mask'])
                 )
-            
+
             # Change BGR to RGB if needed
             if dataset_name == 'fmb':
                 dataset = dataset.map(bgr_to_rgb)
-            
+
             if self.repeat:
                 dataset = dataset.repeat()
             self.name2dataset[dataset_name] = iter(dataset)
@@ -134,7 +134,7 @@ class VLADataset:
             # Randomly sample too long
             if len(episode_steps) > self.epsd_len_thresh_high:
                 episode_steps = random.sample(episode_steps, self.epsd_len_thresh_high)
-                
+
             yield episode_steps
 
 

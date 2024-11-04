@@ -1,6 +1,8 @@
 {
     "exclude": [
         "data/datasets/**/*",
+        "data/text_embeds/**/*",
+        "checkpoints/**/*"
     ],
     "typeCheckingMode": "off"
 }

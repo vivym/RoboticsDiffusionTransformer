@@ -32,8 +32,8 @@ def _parse_function(proto):
     rgb_static = tf.reshape(rgb_static, [200, 200, 3])
     rgb_gripper = tf.reshape(rgb_gripper, [84, 84, 3])
     # RGB to BGR
-    rgb_static = rgb_static[:, :, ::-1]
-    rgb_gripper = rgb_gripper[:, :, ::-1]
+    # rgb_static = rgb_static[:, :, ::-1]
+    # rgb_gripper = rgb_gripper[:, :, ::-1]
     
     return {
         'action': action,
@@ -47,14 +47,18 @@ def _parse_function(proto):
     }
 
 
-def dataset_generator_from_tfrecords(seed):
-    tfrecord_path = './data/datasets/calvin/tfrecords/'
+def dataset_generator_from_tfrecords(seed, debug):
+    if debug:
+        tfrecord_path = './data/datasets/calvin/debug/'
+    else:
+        tfrecord_path = './data/datasets/calvin/tfrecords/'
     filepaths = []
     for root, dirs, files in os.walk(tfrecord_path):
         for filename in fnmatch.filter(files, '*.tfrecord'):
             filepath = os.path.join(root, filename)
             filepaths.append(filepath)
-            
+    print("Found {} tfrecords".format(len(filepaths)))
+
     random.seed(seed)
     random.shuffle(filepaths)
     for filepath in filepaths:
@@ -65,9 +69,9 @@ def dataset_generator_from_tfrecords(seed):
         }
 
 
-def load_dataset(seed):
+def load_dataset(seed, debug=False):
     dataset = tf.data.Dataset.from_generator(
-        lambda: dataset_generator_from_tfrecords(seed),
+        lambda: dataset_generator_from_tfrecords(seed, debug),
         output_signature={
             'steps': tf.data.DatasetSpec(
                 element_spec={
