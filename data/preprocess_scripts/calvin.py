@@ -51,7 +51,7 @@ def dataset_generator_from_tfrecords(seed, debug):
     if debug:
         tfrecord_path = './data/datasets/calvin/debug/'
     else:
-        tfrecord_path = './data/datasets/calvin/tfrecords/'
+        tfrecord_path = './data/datasets/calvin/tfrecords/task_ABC_D/training'
     filepaths = []
     for root, dirs, files in os.walk(tfrecord_path):
         for filename in fnmatch.filter(files, '*.tfrecord'):

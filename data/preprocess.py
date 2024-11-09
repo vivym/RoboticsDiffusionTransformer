@@ -121,7 +121,6 @@ def _generate_json_state_agilex(episode: dict, dataset_name: str):
         state_vec, mask_vec = assemble_state_vec(
             arm_state, arm_format, base_state, base_format)
         
-        
         act_vec, mask_vec = assemble_state_vec(
             action['arm_concat'], arm_format, base_state, base_format
         )
@@ -141,6 +140,90 @@ def _generate_json_state_agilex(episode: dict, dataset_name: str):
 
     episode_metadata['#steps'] = step_id
     
+    episode_states = tf.stack(episode_states)
+    episode_masks = tf.stack(episode_masks)
+    episode_acts = tf.stack(episode_acts)
+
+    return episode_metadata, episode_states, episode_masks, episode_acts
+
+
+@tf.autograph.experimental.do_not_convert
+def _generate_json_state_libero(episode: dict, dataset_name: str):
+    """
+    Generate the json dict and state for a given episode.
+    """
+    # Load some constants from the config
+    IMG_HISTORY_SIZE = config['common']['img_history_size']
+    if IMG_HISTORY_SIZE < 1:
+        raise ValueError("Config `img_history_size` must be at least 1.")
+    ACTION_CHUNK_SIZE = config['common']['action_chunk_size']
+    if ACTION_CHUNK_SIZE < 1:
+        raise ValueError("Config `action_chunk_size` must be at least 1.")
+
+    # Initialize the episode_metadata
+    episode_metadata = {
+        'dataset_name': dataset_name,
+        '#steps': 0,
+        'instruction': None
+    }
+
+    # Check whether this episode has an 'END'
+    base_act = None
+    last_base_act = None
+    episode_states = []
+    episode_acts = []
+    episode_masks = []
+    has_base = None
+    for step_id, step in enumerate(iter(episode['steps'])):
+        # Parse the action
+        action = step['action']
+        if has_base is None:
+            has_base = 'base_concat' in action
+        if has_base:
+            base_act = action['base_concat']
+
+        # Parse the state
+        state = step['observation']
+
+        arm_format = state['format'].numpy().decode('utf-8')
+        act_format = action['format'].numpy().decode('utf-8')
+        base_format = None
+        if has_base:
+            base_formate_idx = act_format.find('base')
+            base_format = act_format[base_formate_idx:]
+
+        arm_state = state['arm_concat']
+        base_state = None
+        if has_base:
+            if last_base_act is None:
+                base_state = base_act * 0
+            else:
+                base_state = last_base_act
+        last_base_act = base_act
+
+        # Assemble the state vector
+        state_vec, mask_vec = assemble_state_vec(
+            arm_state, arm_format, base_state, base_format)
+
+        act_vec, mask_vec = assemble_state_vec(
+            action['arm_concat'], act_format, base_state, base_format
+        )
+
+        episode_states.append(state_vec)
+        episode_masks.append(mask_vec)
+        episode_acts.append(act_vec)
+
+        # Parse the task instruction
+        instr = step['observation']['natural_language_instruction']
+        instr = instr.numpy().decode('utf-8')
+        instr = capitalize_and_period(instr)
+
+        # Write to the episode_metadata
+        if episode_metadata['instruction'] is None:
+            episode_metadata['instruction'] = instr
+
+    episode_metadata['#steps'] = step_id
+
     episode_states = tf.stack(episode_states)
     episode_masks = tf.stack(episode_masks)
     episode_acts = tf.stack(episode_acts)
@@ -316,6 +399,9 @@ def generate_json_state(episode: dict, dataset_name: str):
 
     if dataset_name == "agilex":
         return _generate_json_state_agilex(episode, dataset_name)
+
+    if dataset_name == "libero":
+        return _generate_json_state_libero(episode, dataset_name)
     
     if dataset_name in DATASET_NAMES_NO_STATE:
         return _generate_json_state_nostate_ds(episode, dataset_name)

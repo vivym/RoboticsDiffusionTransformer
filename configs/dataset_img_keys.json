@@ -571,5 +571,14 @@
             "images0"
         ],
         "image_mask":[1,0,0,0]
+    },
+    "libero": {
+        "image_keys": [
+            "agentview_rgb",
+            "eye_in_hand_rgb",
+            "eye_in_hand_rgb",
+            "eye_in_hand_rgb"
+        ],
+        "image_mask":[1,1,0,0]
     }
 }

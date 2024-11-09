@@ -23,7 +23,8 @@ DATASET_NAMES_NOOPENX = [
     "agilex",
     "rh20t",
     'calvin',
-    "bridgev2"
+    "bridgev2",
+    "libero",
 ]
 
 # Read the config
@@ -124,7 +125,7 @@ class VLADataset:
         while True:
             dataset_name = np.random.choice(self.dataset_names, p=self.sample_weights)
             episode = next(self.name2dataset[dataset_name])
-            if dataset_name == "agilex":
+            if dataset_name in ["agilex", "libero"]:
                 episode_steps = flatten_episode_agilex(episode)
             else:
                 episode_steps = flatten_episode(episode)

@@ -7,7 +7,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
 export TEXT_ENCODER_NAME="google/t5-v1_1-xxl"
 export VISION_ENCODER_NAME="google/siglip-so400m-patch14-384"
-export OUTPUT_DIR="./checkpoints/rdt-finetune-calvin-1b-v3"
+export OUTPUT_DIR="./checkpoints/rdt-finetune-libero-1b-v1"
 export CFLAGS="-I/usr/include"
 export LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
 # export CUTLASS_PATH="/path/to/cutlass"
