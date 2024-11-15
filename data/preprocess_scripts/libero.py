@@ -4,6 +4,7 @@ import tensorflow as tf
 import os
 import fnmatch
 import random
+from pathlib import Path
 
 
 def _parse_function(proto):
@@ -90,6 +91,10 @@ def dataset_generator_from_tfrecords(seed, debug):
         for root, dirs, files in os.walk(tfrecord_path):
             for filename in fnmatch.filter(files, '*.tfrecord'):
                 filepath = os.path.join(root, filename)
+                part1, part2 = Path(filepath).parent.stem.split("_")[:2]
+                if part1 == "KITCHEN" and part2 == "SCENE4":
+                    continue
+
                 filepaths.append(filepath)
     print("Found {} tfrecords".format(len(filepaths)))
 
