@@ -95,7 +95,8 @@ class VLAConsumerDataset(Dataset):
         cam_ext_mask_prob=-1.0,
         state_noise_snr=None,
         use_hdf5=False,
-        use_precomp_lang_embed=False
+        use_precomp_lang_embed=False,
+        target_domain=False,
     ):
         super(VLAConsumerDataset, self).__init__()
         
@@ -113,7 +114,7 @@ class VLAConsumerDataset(Dataset):
         
         self.image_processor = image_processor
         
-        self.buffer_dir = config["buf_path"]
+        self.buffer_dir = config["buf_path"] if not target_domain else config["buf_path_target"]
         self.num_chunks = config["buf_num_chunks"]
         self.chunk_size = config["buf_chunk_size"]
         self.tokenizer_max_length = config["tokenizer_max_length"]

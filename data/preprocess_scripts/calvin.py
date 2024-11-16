@@ -47,11 +47,14 @@ def _parse_function(proto):
     }
 
 
-def dataset_generator_from_tfrecords(seed, debug):
+def dataset_generator_from_tfrecords(seed, debug, target_domain=False):
     if debug:
         tfrecord_path = './data/datasets/calvin/debug/'
     else:
-        tfrecord_path = './data/datasets/calvin/tfrecords/task_ABC_D/training'
+        if target_domain:
+            tfrecord_path = './data/datasets/calvin/tfrecords/task_ABC_D/validation'
+        else:
+            tfrecord_path = './data/datasets/calvin/tfrecords/task_ABC_D/training'
     filepaths = []
     for root, dirs, files in os.walk(tfrecord_path):
         for filename in fnmatch.filter(files, '*.tfrecord'):
@@ -69,9 +72,9 @@ def dataset_generator_from_tfrecords(seed, debug):
         }
 
 
-def load_dataset(seed, debug=False):
+def load_dataset(seed, debug=False, target_domain=False):
     dataset = tf.data.Dataset.from_generator(
-        lambda: dataset_generator_from_tfrecords(seed, debug),
+        lambda: dataset_generator_from_tfrecords(seed, debug, target_domain=target_domain),
         output_signature={
             'steps': tf.data.DatasetSpec(
                 element_spec={

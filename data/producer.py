@@ -31,6 +31,8 @@ BUF_CHUNK_SIZE = config['dataset']['buf_chunk_size']
 if BUF_CHUNK_SIZE < 1:
     raise ValueError("Config `buf_chunk_size` must be at least 1.")
 
+BUF_PATH_TARGET = config['dataset']['buf_path_target']
+
 
 def get_dirty_item(chunk_dir):
     """
@@ -155,7 +157,7 @@ def save_sample(step_dict, chunk_dir, chunk_item_idx):
     print("Failed to save sample.")
 
 
-def run_producer(seed, num_workers, worker_id, fill_up, clean_dirty, dataset_type):
+def run_producer(seed, num_workers, worker_id, fill_up, clean_dirty, dataset_type, target_domain):
     """
     Run the producer.
     The producer will first fill up the buffer with samples.
@@ -163,7 +165,7 @@ def run_producer(seed, num_workers, worker_id, fill_up, clean_dirty, dataset_typ
     (i.e., samples that have been read by the consumer)
     with new samples.
     """
-    vla_dataset = VLADataset(seed=seed, dataset_type=dataset_type)
+    vla_dataset = VLADataset(seed=seed, dataset_type=dataset_type, target_domain=target_domain)
     chunk_start_idx = worker_id * BUF_NUM_CHUNKS // num_workers
     chunk_end_idx = (worker_id + 1) * BUF_NUM_CHUNKS // num_workers
     if fill_up:
@@ -255,11 +257,16 @@ if __name__ == '__main__':
                         default="pretrain",
                         help="Whether to load the pretrain dataset or finetune dataset.")
 
+    parser.add_argument('--target_domain', action='store_true', help="Whether to use the target domain.")
+
     # Run the producer
     args = parser.parse_args()
     if args.seed is not None:
         print(f"Base seed: {args.seed}")
         random.seed(args.seed)
+
+    if args.target_domain:
+        BUF_PATH = BUF_PATH_TARGET
 
     processes = []
     process_seeds = [random.randint(0, 2**32) for _ in range(args.n_workers)]
@@ -272,7 +279,14 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     for worker_id in range(args.n_workers):
         p = Process(target=run_producer, args=(
-            process_seeds[worker_id], args.n_workers, worker_id, args.fill_up, args.clean_dirty, args.dataset_type))
+            process_seeds[worker_id],
+            args.n_workers,
+            worker_id,
+            args.fill_up,
+            args.clean_dirty,
+            args.dataset_type,
+            args.target_domain,
+        ))
         p.start()
         processes.append(p)
 

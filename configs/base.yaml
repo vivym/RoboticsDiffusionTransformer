@@ -20,6 +20,7 @@ dataset:
 
   # The path to the buffer (at least 400GB)
   buf_path: /home2/mingyang/projs/RoboticsDiffusionTransformer/cache
+  buf_path_target: /home2/mingyang/projs/RoboticsDiffusionTransformer/cache_target
   # The number of chunks in the buffer
   buf_num_chunks: 512
   # The number of samples (step rather than episode) in each chunk

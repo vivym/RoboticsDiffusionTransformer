@@ -42,7 +42,7 @@ class VLADataset:
     """
     This class is used to sample episodes from the embododiment dataset.
     """
-    def __init__(self, seed, dataset_type, repeat=True):
+    def __init__(self, seed, dataset_type, repeat=True, target_domain: bool = False):
         '''
         seed: the random seed
         dataset_type: 'pretrain' or 'finetune', which dataset to load
@@ -73,7 +73,7 @@ class VLADataset:
         self.name2dataset = {}
         for dataset_name in self.dataset_names:
             if dataset_name in DATASET_NAMES_NOOPENX:
-                dataset = globals()[dataset_name].load_dataset(seed)
+                dataset = globals()[dataset_name].load_dataset(seed, target_domain=target_domain)
             else:
                 dataset_path = dataset_to_path(dataset_name, self.openx_dir)
                 dataset = tfds.builder_from_directory(builder_dir=dataset_path)
